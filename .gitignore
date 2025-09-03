@@ -1,0 +1,28 @@
+# Ignore Python compiled files
+*.pyc
+__pycache__/
+
+# Ignore logs
+*.log
+!app.log
+
+# Ignore all .env files
+*.env
+
+# Ignore build folders anywhere
+**/build/
+
+# Ignore all zip files
+*.zip
+!release/*.zip
+
+
+# Ignore all contents in dump folders
+**/dump/
+**/dump2/
+
+# Ignore all .json files
+*.json
+
+# Ignore all .index files
+*.index
