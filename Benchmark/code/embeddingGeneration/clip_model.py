@@ -5,14 +5,17 @@ from tqdm import tqdm
 import clip
 import pandas as pd
 from PIL import Image
+
+
 from contextlib import asynccontextmanager
 import sys
 sys.path.append("/mnt/storage/RSystemsBenchmarking/gitProject")
+# project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+# if project_root not in sys.path:
+    # sys.path.append(project_root)
 from Benchmark.config.config_utils import load_config
 
 import argparse
-
-
 
 
 

@@ -9,6 +9,11 @@ import sys
 import pysolr
 from typing import List, Dict, Optional
 import clip
+sys.path.append("/mnt/storage/RSystemsBenchmarking/gitProject")
+
+from Benchmark.code.evaluation.time_util import get_time
+
+
 # Disable proxies for local Solr
 os.environ['no_proxy'] = 'localhost,127.0.0.1'
 os.environ['NO_PROXY'] = 'localhost,127.0.0.1'
@@ -48,11 +53,18 @@ class CLIPSemanticSearcher:
             print("Query must be a non-empty string.")
             return None
         try:
+            start_time = get_time()
             tokenized = clip.tokenize([text]).to(self.device)
             with torch.no_grad():
                 features = self.model.encode_text(tokenized)
                 features = features / features.norm(dim=-1, keepdim=True)
-            return features.cpu().numpy().flatten()
+            end_time = get_time()
+            encoding_time = end_time - start_time
+            # return features.cpu().numpy().flatten()
+            return {
+            "embedding": features.cpu().numpy().flatten(),
+            "encoding_time": encoding_time
+        }
         except Exception as e:
             print(f"Encoding error: {e}")
             return None
@@ -61,6 +73,7 @@ class CLIPSemanticSearcher:
         try:
             embedding_str = "[" + ",".join(map(str, query_embedding.tolist())) + "]"
             knn_query = f"{{!knn f=embedding_vector topK={top_k} bruteForce=true}}{embedding_str}"
+            start_time = get_time()
             if self.modality == "text":
                 results = self.solr_client.search(knn_query, **{
                     "rows": top_k,
@@ -74,16 +87,42 @@ class CLIPSemanticSearcher:
                     "fl": "image_path, score",
                     "wt": "json"
                 })
-            return list(results)
+            end_time = get_time()
+            query_time = end_time - start_time
+
+            # return list(results)
+            return {
+                "results": list(results),
+                "query_time": query_time
+            }
         except Exception as e:
             print(f"Vector search error: {e}")
-            return []
+            # return []
+            return {
+                "results": [],
+                "query_time": 0.0
+            }
 
-    def search(self, query_text: str, top_k: int = 10) -> List[Dict]:
-        embedding = self.encode_query(query_text)
-        if embedding is None:
-            return []
-        return self.vector_search(embedding, top_k)
+    # def search(self, query_text: str, top_k: int = 10) -> List[Dict]:
+    #     embedding = self.encode_query(query_text)
+    #     if embedding is None:
+    #         return []
+    #     return self.vector_search(embedding, top_k)
+
+    def search(self, query_text: str, top_k: int = 10) -> Dict:
+        result = self.encode_query(query_text)
+        if result is None:
+             return {"results": [], "encoding_time": 0.0, "query_time": 0.0}
+        embedding = result["embedding"]
+        encoding_time = result["encoding_time"]
+        search_output = self.vector_search(embedding, top_k)
+        
+        return {
+        "results": search_output["results"],
+        "encoding_time": encoding_time,
+        "query_time": search_output["query_time"]
+    }
+
 
     def display_results(self, results: List[Dict], query: str):
         if not results:
@@ -107,8 +146,14 @@ class CLIPSemanticSearcher:
                     break
                 if not query:
                     continue
-                results = self.search(query, top_k=10)
+
+                # results = self.search(query, top_k=10)
+                # self.display_results(results, query)
+                result_obj = self.search(query, top_k=10)
+                results = result_obj["results"]
+                encoding_time = result_obj["encoding_time"]
                 self.display_results(results, query)
+
             except KeyboardInterrupt:
                 break
             except Exception as e:

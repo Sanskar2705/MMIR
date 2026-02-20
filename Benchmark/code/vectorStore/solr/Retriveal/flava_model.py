@@ -35,8 +35,8 @@ class FlavaSemanticSearcher:
     def initialize(self) -> bool:
         try:
             print("Loading FLAVA model...")
-            self.processor = FlavaProcessor.from_pretrained("facebook/flava-full")
-            self.model = FlavaModel.from_pretrained("facebook/flava-full").to(self.device).eval()
+            self.processor = FlavaProcessor.from_pretrained("/mnt/storage/RSystemsBenchmarking/gitProject/Benchmark/Models/flava_full_model")
+            self.model = FlavaModel.from_pretrained("/mnt/storage/RSystemsBenchmarking/gitProject/Benchmark/Models/flava_full_model").to(self.device).eval()
 
             self.model.eval()
             print("FLAVA model loaded successfully.")

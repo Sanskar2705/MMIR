@@ -1,68 +1,42 @@
-## 1. Embedding Generation
+# Embedding Generation
 
-Embedding scripts are located in:
+## Aim
+This directory contains scripts for generating embeddings from various multi-modal models. These embeddings are used for downstream retrieval tasks.
 
-```
+## Usage
 
-Benchmark/code/embeddingGeneration
-
-````
-
-These scripts generate vector representations (embeddings) of your data using a specified model and modality.
-
-###  How to Use
-
-```
-python clip_model.py --modality image --dataset flickr
-```
-
-* `--modality` or `-m`: Choose between `text` or `image`.
-* `--dataset` or `-d`: Choose between `flickr` or `COCO`.
-
-
-## 2. FLAVA (Image + Text)
-
-Generates **both image and text** embeddings in one run.
-
+### `clip_model.py`
+Generates CLIP embeddings for images or text.
 ```bash
-# Flickr
-python code/embeddingGeneration/flava_embeddings.py \
-  --dataset flickr --modality both --batch-img 32 --batch-text 128
-
-# COCO
-python code/embeddingGeneration/flava_embeddings.py \
-  --dataset coco --modality both --batch-img 32 --batch-text 128
+python clip_model.py --modality [text|image] --dataset [coco|flickr]
 ```
 
-**Arguments:**
-
-* `--modality`: `image`, `text`, or `both`
-* `--batch-img`: Batch size for image embeddings
-* `--batch-text`: Batch size for text embeddings
-
-## 3. UNIIR CLIP-SF (Image / Caption / Joint)
-
-Generates:
-
-1. Image-only embeddings
-2. Caption-only embeddings
-3. Joint embeddings (score-level fusion of image + caption)
-
+### `flava_model.py`
+Generates FLAVA embeddings for images, text, or both.
 ```bash
-python code/embeddingGeneration/uniir_clip_sf_exporter.py \
-  --dataset flickr \
-  --arch ViT-L-14-quickgelu \
-  --ckpt /path/to/clip_sf_large.pth \
-  --batch-img 32 --batch-text 128 --w3 1.0 --w4 1.0
+python flava_model.py --dataset [coco|flickr] --modality [image|text|both] --batch-img [int] --batch-text [int]
 ```
 
-**Arguments:**
+### `miniLM_model.py`
+Generates MiniLM embeddings (text only).
+```bash
+python miniLM_model.py --modality text --dataset [coco|flickr]
+```
 
-* `--dataset`: `flickr` or `coco`
-* `--arch`: CLIP backbone architecture
-* `--ckpt`: Path to UniIR checkpoint
-* `--batch-img`: Batch size for image embeddings
-* `--batch-text`: Batch size for caption/joint embeddings
-* `--w3`, `--w4`: Fusion weights for image & text (candidate side)
-* `--fp16`: Use half precision (optional)
+### `test_preflmr.py`
+Runs PreFLMR indexing/embedding generation.
+```bash
+python test_preflmr.py --dataset [coco|flickr] --checkpoint [path] --image-processor [path] --index-root [path] --experiment [name] --index-name [name] --nbits [int] --doc-maxlen [int] --use-gpu
+```
 
+### `uniir_model.py`
+Generates UniIR embeddings with support for different variants (CLIP-SF, BLIP-FF).
+```bash
+python uniir_model.py --dataset [coco|flickr] --variant [clip_sf|blip_ff] --modality [all|image|text|joint] --batch-img [int] --batch-text [int] --fp16 --w3 [float] --w4 [float] --suffix [str]
+```
+
+### `uniir_model_new.py`
+Newer version of UniIR embedding generation.
+```bash
+python uniir_model_new.py --dataset [coco|flickr] --modality [all|image|text|joint] --batch-img [int] --batch-text [int] --fp16 --w3 [float] --w4 [float]
+```

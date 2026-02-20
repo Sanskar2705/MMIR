@@ -18,6 +18,7 @@ ENDPOINTS = {
     "MiniLmCaption_mscoco": "http://localhost:5004/MiniLmCaption_mscoco",
     "MiniLmCaption_flickr": "http://localhost:5004/MiniLmCaption_flickr",
     "ClipCaptionImage_mscoco": "http://localhost:5004/ClipCaptionImage_mscoco",
+    
 }
 
 FUSION_ENDPOINT = "http://localhost:5004/rrf_fusion"
@@ -118,4 +119,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

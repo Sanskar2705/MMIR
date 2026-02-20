@@ -40,7 +40,7 @@ proxies = {
 
 MAX_SAMPLES = None  # Set to None to use full dataset
 
-def query_and_save(service_url, annotation_file, output_file,k=10, methods=None,reranking_url=None):
+def query_and_save(service_url, annotation_file, output_file,k=10, methods=None,reranking_url=None, rerank_candidates=100):
     
     print(locals())
     
@@ -57,28 +57,117 @@ def query_and_save(service_url, annotation_file, output_file,k=10, methods=None,
             per_query_log = {}
             per_query_log["query"] = query_caption
 
+            # start_time = get_time()
+            # start_energy = get_gpu_energy()
+
+            
+            # if methods: 
+            #     # Fusion query - pass list of methods
+            #     response = requests.get(service_url, params={
+            #         "q": query_caption,
+            #         "methods": methods
+            #     })
+                 
+            #     duration = get_time() - start_time
+            #     energy_util = get_gpu_energy() - start_energy
+            #     response.raise_for_status()
+            #     results = response.json()
+            # else:
+            #     # Single model query
+            #     candidate_k = 30 if reranking_url is not None else k
+            #     response = requests.get(service_url, params={"q": query_caption, "k": candidate_k})
+            
+            #this code works for 30
+            # start_time = get_time()
+            # start_energy = get_gpu_energy()
+
+            # candidate_k = 30 if reranking_url is not None else k
+
+            # if methods:
+            #     # Fusion query - pass list of methods
+            #     response = requests.get(service_url, params={
+            #         "q": query_caption,
+            #         "methods": methods,
+            #         "k": candidate_k
+            #     })
+
+            #     duration = get_time() - start_time
+            #     energy_util = get_gpu_energy() - start_energy
+            #     response.raise_for_status()
+            #     results = response.json()
+            # else:
+            #     # Single model query
+            #     response = requests.get(service_url, params={"q": query_caption, "k": candidate_k})
+
+            #     duration = get_time() - start_time
+            #     energy_util = get_gpu_energy() - start_energy
+            #     response.raise_for_status()
+            #     results = response.json()
             start_time = get_time()
             start_energy = get_gpu_energy()
 
-            
+            # final_k = k            # final output size (top-10)
+            # candidate_k = 30       # fetch 30 from each endpoint for fusion
+
+            # if methods:
+            #     # RRF fusion call: fetch 30 from each model, return top-10 fused
+            #     response = requests.get(
+            #         service_url,
+            #         params={
+            #             "q": query_caption,
+            #             "methods": methods,
+            #             "k": final_k,                 #  final top-10
+            #             "candidate_k": candidate_k    #  per-endpoint top-30
+            #         },
+            #         proxies=proxies,
+            #         timeout=120
+            #     )
+            # else:
+            #     # Single model: return top-k as usual
+            #     response = requests.get(
+            #         service_url,
+            #         params={"q": query_caption, "k": final_k},
+            #         proxies=proxies,
+            #         timeout=120
+            #     )
+            final_k = k
+            rerank_candidate_k = rerank_candidates if reranking_url is not None else final_k
+
             if methods:
-                # Fusion query - pass list of methods
-                response = requests.get(service_url, params={
-                    "q": query_caption,
-                    "methods": methods
-                })
-                
-                duration = get_time() - start_time
-                energy_util = get_gpu_energy() - start_energy
-                response.raise_for_status()
-                results = response.json()
+                # RRF fusion case: ask fusion endpoint to RETURN 100 fused candidates
+                response = requests.get(
+                    service_url,
+                    params={
+                        "q": query_caption,
+                        "methods": methods,
+                        "k": rerank_candidate_k,        # RETURN 100 fused
+                        "candidate_k": rerank_candidate_k  # each model fetch size (can keep 30 if you want)
+                    },
+                    proxies=proxies,
+                    timeout=120
+                )
             else:
-                # Single model query
-                response = requests.get(service_url, params={"q": query_caption})
-                duration = get_time() - start_time
-                energy_util = get_gpu_energy() - start_energy
-                response.raise_for_status()
-                results = response.json()
+                # Single model case: ask retrieval endpoint to return 100 candidates
+                response = requests.get(
+                    service_url,
+                    params={"q": query_caption, "k": rerank_candidate_k},
+                    proxies=proxies,
+                    timeout=120
+                )
+
+
+            duration = get_time() - start_time
+            energy_util = get_gpu_energy() - start_energy
+
+            response.raise_for_status()
+            results = response.json()
+
+
+                # response = requests.get(service_url, params={"q": query_caption,"k":k})
+                # duration = get_time() - start_time
+                # energy_util = get_gpu_energy() - start_energy
+                # response.raise_for_status()
+                # results = response.json()
             
             
             per_query_log["running_time_without_reranking"] = duration
@@ -103,7 +192,7 @@ def query_and_save(service_url, annotation_file, output_file,k=10, methods=None,
                 top_k_list_fetched = results.get("list_of_top_k", [])
                 reranking_start_energy = get_gpu_energy() 
                 reranking_start_time = get_time()
-                reranked_response = requests.get(reranking_url, params={"query": query_caption,'topk_list':json.dumps(top_k_list_fetched),"K":k})
+                reranked_response = requests.get(reranking_url, params={"query": query_caption,'topk_list':json.dumps(top_k_list_fetched),"K": rerank_candidate_k})
                 reranking_end_time = get_time()
                 reranking_end_energy = get_gpu_energy()
                 duration = get_time() - start_time
@@ -115,7 +204,7 @@ def query_and_save(service_url, annotation_file, output_file,k=10, methods=None,
                 per_query_log["reranking_time"] = reranking_end_time - reranking_start_time
                 per_query_log["reranking_energy"] = reranking_end_energy - reranking_start_energy
                 per_query_log["list_of_top_k"] = reranked_results["list_of_top_k"]
-
+                
                 for key in reranked_results:
                     if "list_of_top_k" != key:
                         per_query_log[key+"_reranking_service"] = reranked_results[key]
@@ -146,16 +235,17 @@ def main():
     parser.add_argument("--suffix", "-s", help="suffix to result file", default="_0")
     parser.add_argument("--dataset", "-d", help="Enter dataset to be evaluated")
     parser.add_argument("--rerankingmodel","-r",help="Enter type of reranking",default=None)
-    parser.add_argument("--k","-k",help="top k results will be fetched",default=config["k"])
+    # parser.add_argument("--k","-k",help="top k results will be fetched",default=config["k"])
+    parser.add_argument("--k","-k", type=int, help="top k results will be fetched", default=int(config["k"]))
+    parser.add_argument("--rerank_candidates", type=int, default=100)
+
 
     args = parser.parse_args()
     op_suffix = args.suffix   
     reranking_model = args.rerankingmodel
     k = args.k 
-
   
     ENDPOINTS = config["endpoints"]
-    
 
     # Initialize pynvml
     pynvml.nvmlInit()
@@ -190,6 +280,23 @@ def main():
         dataset = (url.split("/")[-1]).split("_")[2]
         db = (url.split("/")[-1]).split("_")[3]
 
+
+        # parts = (url.split("/")[-1]).split("_")
+
+        # if parts[0] == "two" and parts[1] == "stage":
+        #     # Handle two_stage_*_dataset_db
+        #     model = parts[2]          # clip
+        #     dataset = parts[3]        # coco/flickr
+        #     db = parts[4]             # solr/faiss
+        #     modality = "two_stage"
+        # else:
+        #     model = parts[0]          # clip/flava/etc.
+        #     modality = parts[1]       # image/text
+        #     dataset = parts[2]        # coco/flickr
+        #     db = parts[3]             # solr/faiss
+
+
+
         annotation_file = config["paths"]["dataset"][dataset]["query_annotations_path"]
 
         
@@ -223,7 +330,7 @@ def main():
             print("One or more method names are invalid. Exiting.")
             return
         
-        output_file = result_folder / f"results_{'_'.join(m.lower() for m in methods)}_{op_suffix}.json"
+        output_file = result_folder / f"results_rrf_{'_'.join(m.lower() for m in methods)}_{op_suffix}.json"
         url = FUSION_ENDPOINT
         print(f"\nRunning RRF fusion with: {', '.join(methods)}")
     else:
@@ -239,7 +346,16 @@ def main():
     
 
      
-    query_and_save(url, annotation_file, output_file,k, methods,reranking_url=neural_reranking_url)
+    # query_and_save(url, annotation_file, output_file,k, methods,reranking_url=neural_reranking_url)
+    query_and_save(
+        url,
+        annotation_file,
+        output_file,
+        k,
+        methods,
+        reranking_url=neural_reranking_url,
+        rerank_candidates=args.rerank_candidates,
+    )
 
 
     batch_end_energy = get_gpu_energy()

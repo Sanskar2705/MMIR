@@ -14,7 +14,6 @@ def load_json(path):
 def evaluate(annotation_file, results_file):
     annotations = load_json(annotation_file)
     results     = load_json(results_file)
-
     total = r1 = r5 = r10 = 0
     for ann, res in tqdm(zip(annotations, results), total=len(annotations)):
         gt_image  = ann["image"]
@@ -42,7 +41,6 @@ if __name__ == "__main__":
     parser.add_argument("--result", "-r", help="results json file path")
     parser.add_argument("--dataset", "-d", help="Dataset ", default=selected_dataset)
     
-
     args = parser.parse_args()
     results_file = args.result
     dataset_name = args.dataset

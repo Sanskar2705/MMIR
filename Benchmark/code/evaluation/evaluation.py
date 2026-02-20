@@ -21,12 +21,18 @@ proxies = {
 # SERVICE_URL_IMAGE = "http://localhost:8103/flickr-flava-text"
 
 # CLIP_IMG_FLICKR
-SERVICE_URL_IMAGE = "http://localhost:8083/rerank_mscoco_clip_only"
+# SERVICE_URL_IMAGE = "http://localhost:8083/rerank_mscoco_clip_only"
 # SERVICE_URL_IMAGE = "http://localhost:5005/ClipImage_flickr"
+# SERVICE_URL_IMAGE = "http://localhost:5052/uniir_joint_coco_faiss"
+#SERVICE_URL_IMAGE = "http://localhost:8084/neuralrerank_blip2_withendpoint"
+SERVICE_URL_IMAGE = "http://localhost:5053/uniir_joint-image-text_flickr_faiss" 
+# test_endpoint = "http://localhost:5050/clip_image_coco_solr"
+# test_endpoint = "http://localhost:5052/uniir_caption_flickr_faiss"
+test_endpoint = "http://localhost:5053/uniir_joint-image-text_flickr_faiss"
 
 # SERVICE_URL_CAPTION = "http://localhost:5005/ClipCaption_mscoco"
-ANNOTATION_FILE = "/mnt/storage/RSystemsBenchmarking/data/datasets/coco/annotations/coco_karpathy_test.json"
-# ANNOTATION_FILE = "/mnt/storage/RSystemsBenchmarking/data/datasets/vision/flickr30k/annotations/test.json"
+#ANNOTATION_FILE = "/mnt/storage/RSystemsBenchmarking/data/datasets/coco/annotations/coco_karpathy_test.json"
+ANNOTATION_FILE = "/mnt/storage/RSystemsBenchmarking/data/datasets/vision/flickr30k/annotations/test.json"
 
 TOP_K = 10
 
@@ -45,8 +51,9 @@ def evaluate(service_url):
         query_caption = entry["caption"][4].strip()
 
         try:
-            response = requests.get(service_url, params={"q": query_caption},proxies=proxies)
+            response = requests.get(service_url, params={"q": query_caption,"methods":[test_endpoint]},proxies=proxies)
             response.raise_for_status()
+            print(response.json())
             results = response.json()["list_of_top_k"]
         except Exception as e:
             print(f"Error with query: {query_caption} -> {e}")

@@ -10,6 +10,8 @@ import numpy as np
 import pysolr
 from typing import List, Dict, Optional
 from sentence_transformers import SentenceTransformer
+sys.path.append("/mnt/storage/RSystemsBenchmarking/gitProject")
+from Benchmark.code.evaluation.time_util import get_time
 
 # Disable proxies for local Solr
 os.environ['no_proxy'] = 'localhost,127.0.0.1'
@@ -46,8 +48,16 @@ class MiniLMSemanticSearcher:
             print("Query must be a non-empty string.")
             return None
         try:
+            start_time = get_time()
             embedding = self.model.encode(text, normalize_embeddings=True)
-            return embedding.astype(np.float32)
+            end_time = get_time()
+            encoding_time = end_time - start_time
+
+            # return embedding.astype(np.float32)
+            return {
+                "embedding": embedding.astype(np.float32),
+                "encoding_time": encoding_time
+            }
         except Exception as e:
             print(f"Encoding error: {e}")
             return None
@@ -56,21 +66,47 @@ class MiniLMSemanticSearcher:
         try:
             embedding_str = "[" + ",".join(map(str, query_embedding.tolist())) + "]"
             knn_query = f"{{!knn f=embedding_vector topK={top_k} bruteForce=true}}{embedding_str}"
+            start_time = get_time()
             results = self.solr_client.search(knn_query, **{
                 "rows": top_k,
                 "fl": "image_path, caption, score",
                 "wt": "json"
             })
-            return list(results)
+            end_time = get_time()
+            query_time = end_time - start_time
+
+            # return list(results)
+            return {
+                "results": list(results),
+                "query_time": query_time
+            }
         except Exception as e:
             print(f"Vector search error: {e}")
-            return []
+            # return []
+            return {
+                "results": [],
+                "query_time": 0.0
+            }
 
-    def search(self, query_text: str, top_k: int = 10) -> List[Dict]:
-        embedding = self.encode_query(query_text)
-        if embedding is None:
-            return []
-        return self.vector_search(embedding, top_k)
+    # def search(self, query_text: str, top_k: int = 10) -> List[Dict]:
+    #     embedding = self.encode_query(query_text)
+    #     if embedding is None:
+    #         return []
+    #     return self.vector_search(embedding, top_k)
+
+    def search(self, query_text: str, top_k: int = 10) -> Dict:
+        result = self.encode_query(query_text)
+        if result is None:
+             return {"results": [], "encoding_time": 0.0, "query_time": 0.0}
+        embedding = result["embedding"]
+        encoding_time = result["encoding_time"]
+        search_output = self.vector_search(embedding, top_k)
+        
+        return {
+        "results": search_output["results"],
+        "encoding_time": encoding_time,
+        "query_time": search_output["query_time"]
+    }    
 
     def display_results(self, results: List[Dict], query: str):
         if not results:

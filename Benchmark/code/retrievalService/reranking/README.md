@@ -8,4 +8,3 @@ or
 
 3) Start the (FAST API) service
 ``` uvicorn query_rerank_service:app --reload --port 8083 ```
-    

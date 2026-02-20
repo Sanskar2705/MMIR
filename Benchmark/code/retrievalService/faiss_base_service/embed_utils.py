@@ -44,11 +44,18 @@ def _load_uniir(model_cfg: Dict, dev: str) -> Callable[[str], np.ndarray]:
     ckpt_path = Path(model_cfg["checkpoint"])
     prompt    = model_cfg.get("prompt", "").strip()
 
-    model, _, _ = open_clip.create_model_and_transforms(arch, pretrained="openai", device=dev)
+    #model, _, _ = open_clip.create_model_and_transforms(arch, pretrained="openai", device=dev)
+    model, _, _ = open_clip.create_model_and_transforms(arch, pretrained=None, device=dev)
+
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=FutureWarning)
-        state = torch.load(ckpt_path, map_location="cpu")
+        import omegaconf
+        import torch.serialization
+
+        torch.serialization.add_safe_globals([omegaconf.dictconfig.DictConfig])
+
+        state = torch.load(ckpt_path, map_location="cpu", weights_only=False)
     state = state.get("model") or state.get("state_dict") or state
     state = {k.replace("clip_model.", "", 1): v for k, v in state.items()}
     model.load_state_dict(state, strict=False)

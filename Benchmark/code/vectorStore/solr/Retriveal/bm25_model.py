@@ -8,6 +8,9 @@ import os
 import sys
 import pysolr
 from typing import List, Dict
+sys.path.append("/mnt/storage/RSystemsBenchmarking/gitProject")
+
+from Benchmark.code.evaluation.time_util import get_time
 
 # Disable proxies for local Solr communication
 os.environ['no_proxy'] = 'localhost,127.0.0.1'
@@ -29,6 +32,7 @@ class BM25CaptionSearcher:
 
     def search(self, query_text: str, top_k: int = 10) -> List[Dict]:
         try:
+            start_time = get_time()
             results = self.solr_client.search(query_text, **{
                 "qf": "caption",
                 "rows": top_k,
@@ -36,10 +40,21 @@ class BM25CaptionSearcher:
                 "defType": "edismax",
                 "wt": "json"
             })
-            return list(results)
+            end_time = get_time()
+            query_time = end_time - start_time
+            # return list(results)
+            return {
+                "results": list(results),
+                "query_time": query_time
+            }
         except Exception as e:
             print(f"Search error: {e}")
-            return []
+            # return []
+            return {
+                "results": [],
+                "query_time": 0.0
+            }
+
 
     def display_results(self, results: List[Dict], query: str):
         if not results:

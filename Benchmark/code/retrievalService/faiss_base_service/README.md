@@ -1,30 +1,16 @@
-The service currently supports the following models
-1) FLAVA
-2) UNI-IR
+# FAISS Retrieval Service
 
-# Setup
-To install the dependenices please setup a python environment using requirements.txt file given above.
+## Aim
+This directory contains the base service for FAISS-based retrieval. It provides a FastAPI server to handle retrieval requests using pre-built FAISS indices.
 
-## Start the server
+## Usage
 
+### `faiss_retrieval_server_updated.py`
+Starts the FAISS retrieval server.
 ```bash
-uvicorn faiss_retrieval_server:app --host 0.0.0.0 --port 5052 --reload
+uvicorn faiss_retrieval_server_updated:app --host 0.0.0.0 --port 5053
 ```
+(Note: This file is typically run using `uvicorn` as it defines a FastAPI app.)
 
-**Endpoints**
-
-* `GET /available` → lists discovered indexes
-* `GET /{model}_{target}_{dataset}_faiss?q=...&k=10`
-
-  * `model ∈ {uniir, flava}`
-  * `target ∈ {image, caption, joint}`
-  * `dataset ∈ {coco, flickr}`
-* `POST /refresh` → reloads `config.yaml`, rescans indices, clears embedder cache
-
-**Example**
-
-```bash
-curl "http://localhost:5052/uniir_joint_coco_faiss?q=a+red+bus&k=10"
-curl -X POST "http://localhost:5052/refresh"
-```
-
+### `embed_utils.py`
+A utility module containing the model loaders and embedding functions. It is not meant to be run directly but is imported by the server scripts.

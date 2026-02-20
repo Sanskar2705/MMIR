@@ -3,6 +3,8 @@ import sys
 import json
 import re
 from pathlib import Path
+import os
+env = os.environ.copy()
 
 sys.path.append("/mnt/storage/RSystemsBenchmarking/gitProject")
 from Benchmark.config.config_utils import load_config
@@ -10,7 +12,22 @@ from Benchmark.config.config_utils import load_config
 config = load_config()
 endpoints = list(config["endpoints"].keys())
 single_endpoints = [ep for ep in endpoints if ep.lower() != "rrf"]
-single_endpoints = single_endpoints[0:13]
+# single_endpoints = single_endpoints[0:18]
+# single_endpoints = single_endpoints[18:34]
+# single_endpoints = single_endpoints[18:34]
+# single_endpoints = single_endpoints[4:5]
+# single_endpoints = single_endpoints[-4:]
+# single_endpoints = [ single_endpoints[20]]+ [single_endpoints[22]] + [single_endpoints[24]] + [single_endpoints[26]] + [single_endpoints[27]] + [single_endpoints[28]] +[single_endpoints[30]]   
+single_endpoints = [ single_endpoints[19]]+ [single_endpoints[21]] + [single_endpoints[23]] + [single_endpoints[25]] + [single_endpoints[29]] + [single_endpoints[31]] +[single_endpoints[32]] + [single_endpoints[33]]    
+
+
+for k in ["http_proxy", "https_proxy", "HTTP_PROXY", "HTTPS_PROXY"]:
+    env.pop(k, None)
+
+env["no_proxy"] = "localhost,127.0.0.1"
+env["NO_PROXY"] = "localhost,127.0.0.1"
+
+print(single_endpoints)
 
 SCRIPT_PATH = "/mnt/storage/RSystemsBenchmarking/gitProject/Benchmark/code/evaluation/generate_metadata.py"
 ENERGY_LOG_PATH = "/mnt/storage/RSystemsBenchmarking/gitProject/Benchmark/results/energy_log.json"
@@ -27,17 +44,19 @@ if Path(ENERGY_LOG_PATH).exists():
         print(f"Warning: Could not load existing energy log. Starting fresh. Error: {e}")
 
 
-for j in range(80,100):
-# for j in range(0,5):
+# for j in range(0,40):
+for j in range(0,1):
+# for j in range(40,80):
     for i, endpoint in enumerate(single_endpoints, 1):
         print(f"\n===== Running for Endpoint {i}: {endpoint} =====")
         proc = subprocess.Popen(
-            # ["python3", SCRIPT_PATH, "--suffix", f"_rerank_blip2_{j}", "--rerankingmodel" , "blip2"],
-            ["python3", SCRIPT_PATH, "--suffix", f"_{j}"],
+            ["python3", SCRIPT_PATH, "--suffix", f"_rerank-blip2_{j}", "--rerankingmodel" , "blip2", "--rerank_candidates", "100"], 
+            # ["python3", SCRIPT_PATH, "--suffix", f"_{j}"],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            text=True
+            text=True,
+            env=env,
         )
 
         inputs = f"single\n{endpoint}\n"
@@ -61,4 +80,4 @@ for j in range(80,100):
 
 # Save updated energy log
 with open(ENERGY_LOG_PATH, "w") as f:
-    json.dump(energy_log, f, indent=2)
+    json.dump(energy_log, f, indent=2) 

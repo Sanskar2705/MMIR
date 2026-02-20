@@ -55,10 +55,10 @@ from embed_utils import get_embedder     # NEW!
 # ───── generic helpers ───── #
 def l2norm(x: torch.Tensor) -> torch.Tensor:
     return torch.nn.functional.normalize(x, dim=-1)
-
-
+ 
+ 
 # ───── FAISS wrapper ───── #
-class FaissSearcher:
+class FaissSearcher: 
     """Wrap FAISS index + metadata + embedding fn."""
     def __init__(
         self,
@@ -106,8 +106,8 @@ class FaissSearcher:
                 "target"        : self.target,
             })
         return hits, emb_ms, ret_ms
-
-
+ 
+ 
 # ───── registry builder ───── #
 def build_registry(cfg: Dict, faiss_dir: Path):
     """Dynamically discover indexes & wire them to the correct embedder."""
@@ -144,7 +144,7 @@ def build_registry(cfg: Dict, faiss_dir: Path):
         except KeyError:
             embed_fn = get_embedder(model_tag, cfg, dev)
             EMBEDDERS[model_tag] = embed_fn
-
+     
         # 3) Caption lookup only needed for image index to enrich results
         caption_lookup = {}
         if target == "image":
@@ -240,3 +240,6 @@ def refresh():
     EMBEDDERS.clear()                   # clear cached embedders -> prompt reloads
     SEARCHERS = build_registry(cfg, faiss_dir)
     return {"ok": True, "available": [f"{m}_{t}_{d}_faiss" for (m,d,t) in SEARCHERS.keys()]}
+
+
+
