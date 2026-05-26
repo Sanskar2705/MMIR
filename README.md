@@ -23,3 +23,13 @@
 ## 6. Evaluation Metrics (Recall/@K)
 
 [Evaluation](Benchmark/code/evaluation/README.md)
+
+
+## 7. ANN Fidelity
+
+[ANN fidelity](Benchmark/ANN/README.md)
+
+
+## 8. Scalability Experiments
+
+[Scalability Experiments](Benchmark/code/scalabilityExperiments/README.md)
